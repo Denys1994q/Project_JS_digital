@@ -2763,6 +2763,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _modules_slider_slider_main__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./modules/slider/slider-main */ "./src/js/modules/slider/slider-main.js");
 /* harmony import */ var _modules_slider_slider_mini__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./modules/slider/slider-mini */ "./src/js/modules/slider/slider-mini.js");
 /* harmony import */ var _modules_playVideo__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./modules/playVideo */ "./src/js/modules/playVideo.js");
+/* harmony import */ var _modules_difference__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./modules/difference */ "./src/js/modules/difference.js");
+
 
 
 
@@ -2800,7 +2802,88 @@ window.addEventListener('DOMContentLoaded', function () {
 
   var player = new _modules_playVideo__WEBPACK_IMPORTED_MODULE_2__["default"]('.showup .play', '.overlay');
   player.init();
+  new _modules_difference__WEBPACK_IMPORTED_MODULE_3__["default"]('.officerold', '.officernew', '.officer__card-item').init();
 });
+
+/***/ }),
+
+/***/ "./src/js/modules/difference.js":
+/*!**************************************!*\
+  !*** ./src/js/modules/difference.js ***!
+  \**************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Difference; });
+/* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/modules/web.dom-collections.for-each */ "./node_modules/core-js/modules/web.dom-collections.for-each.js");
+/* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_0__);
+
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+var Difference =
+/*#__PURE__*/
+function () {
+  function Difference(oldOfficer, newOfficer, items) {
+    _classCallCheck(this, Difference);
+
+    // те, що ми передаємо з main 
+    this.oldOfficer = document.querySelector(oldOfficer); // ті змінні, з якими ми працюємо безпосередньо у ф-ії 
+
+    this.newOfficer = document.querySelector(newOfficer);
+    this.items = items;
+  }
+
+  _createClass(Difference, [{
+    key: "hideItems",
+    value: function hideItems() {
+      this.oldOfficer.querySelectorAll(this.items).forEach(function (item, i, arr) {
+        if (i !== arr.length - 1) {
+          // приховуємо всі елементи, крім останнього 
+          item.style.display = 'none';
+        }
+      });
+      this.newOfficer.querySelectorAll(this.items).forEach(function (item, i, arr) {
+        if (i !== arr.length - 1) {
+          // приховуємо всі елементи, крім останнього 
+          item.style.display = 'none';
+        }
+      });
+    }
+  }, {
+    key: "bindTriggers",
+    value: function bindTriggers() {
+      var _this = this;
+
+      var n = 0;
+      this.oldOfficer.querySelector('.plus__content').addEventListener('click', function () {
+        _this.oldOfficer.querySelectorAll(_this.items)[n].style.display = 'flex';
+        n++;
+
+        if (n > 2) {
+          _this.oldOfficer.querySelectorAll(_this.items)[n].style.display = 'flex';
+          _this.oldOfficer.querySelectorAll(_this.items)[_this.oldOfficer.querySelectorAll(_this.items).length - 1].style.display = 'none';
+        }
+      });
+    }
+  }, {
+    key: "init",
+    value: function init() {
+      this.hideItems();
+      this.bindTriggers();
+    }
+  }]);
+
+  return Difference;
+}();
+
+
 
 /***/ }),
 

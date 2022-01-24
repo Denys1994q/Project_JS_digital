@@ -1,6 +1,7 @@
 import MainSlider from './modules/slider/slider-main';
 import MiniSlider from './modules/slider/slider-mini';
 import VideoPlayer from './modules/playVideo';
+import Difference from './modules/difference';
 
 window.addEventListener('DOMContentLoaded', () => {
     // 4 різні слайдери: 1 екземпляр MainSlider, 3 екземпляри MiniSlider
@@ -40,4 +41,7 @@ window.addEventListener('DOMContentLoaded', () => {
     // ютуб-плеєр
     const player = new VideoPlayer('.showup .play', '.overlay');
     player.init();
+
+    new Difference('.officerold', '.officernew', '.officer__card-item').init();
+
 });
