@@ -2,37 +2,39 @@ export default class Difference {
     constructor(oldOfficer, newOfficer, items) { // те, що ми передаємо з main 
         this.oldOfficer = document.querySelector(oldOfficer); // ті змінні, з якими ми працюємо безпосередньо у ф-ії 
         this.newOfficer = document.querySelector(newOfficer);
-        this.items = items;
+        this.oldItems = this.oldOfficer.querySelectorAll(items);
+        this.newItems = this.newOfficer.querySelectorAll(items);
+        this.oldCounter = 0;
+        this.newCounter = 0;
     }
 
-    hideItems() {
-       this.oldOfficer.querySelectorAll(this.items).forEach((item, i, arr) => {
+    hideItems(items) {
+       items.forEach((item, i, arr) => {
             if (i !== arr.length - 1) { // приховуємо всі елементи, крім останнього 
                 item.style.display = 'none';
             }
        }) 
-       this.newOfficer.querySelectorAll(this.items).forEach((item, i, arr) => {
-            if (i !== arr.length - 1) { // приховуємо всі елементи, крім останнього 
-            item.style.display = 'none';
-            }
-         }) 
     }
 
-    bindTriggers() {
-        let n = 0; 
-        this.oldOfficer.querySelector('.plus__content').addEventListener('click', () => {
-            this.oldOfficer.querySelectorAll(this.items)[n].style.display = 'flex';
-            n++;
-            if(n > 2) {
-                this.oldOfficer.querySelectorAll(this.items)[n].style.display = 'flex';
-                this.oldOfficer.querySelectorAll(this.items)[this.oldOfficer.querySelectorAll(this.items).length-1].style.display = 'none';
+    bindTriggers(officer, counter, items) {
+        officer.querySelector('.plus').addEventListener('click', () => {
+            if (counter !== items.length - 2) { // якщо зараз каунтер ще не дійшов до передостаннього елементу
+                items[counter].classList.add('animated', 'fadeIn');
+                items[counter].style.display = 'flex';
+                counter++;
+            } else { // коли показується передстання карточка, остання карточка видаляється
+                items[counter].classList.add('animated', 'fadeIn'); 
+                items[counter].style.display = 'flex';
+                items[items.length - 1].remove();
             }
-        })
+        });    
     }
 
     init() {
-        this.hideItems();
-        this.bindTriggers();
+        this.hideItems(this.newItems);
+        this.hideItems(this.oldItems);
+        this.bindTriggers(this.oldOfficer, this.oldCounter, this.oldItems);
+        this.bindTriggers(this.newOfficer, this.newCounter, this.newItems);
     }
 
 }

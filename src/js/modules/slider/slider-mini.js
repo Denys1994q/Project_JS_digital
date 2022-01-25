@@ -24,38 +24,28 @@ export default class MiniSlider extends Slider {
         }
     }
 
+    moveButtonsToEnd() {
+        this.slides.forEach((slide, i) => {
+            if(slide.tagName === "BUTTON") {
+                this.container.appendChild(this.slides[i]);
+            }
+        });
+    }
+
     nextSlide() {
-          // для кнопок в слайді - баг, щоб вони не ставали першими 
-          if (this.slides[1].tagName == "BUTTON" && this.slides[2].tagName == "BUTTON") {
-            this.container.appendChild(this.slides[0]); // slide
-            this.container.appendChild(this.slides[1]); // btn
-            this.container.appendChild(this.slides[2]); // btn
-            this.decorizeSlides();    
-        } else if (this.slides[1].tagName == "BUTTON") {
-            this.container.appendChild(this.slides[0]); // slide
-            this.container.appendChild(this.slides[1]); // btn
-            this.decorizeSlides();    
-        } else {
-            this.container.appendChild(this.slides[0]); // перший слайд стає останнім 
-            this.decorizeSlides();     
-        }
+        this.container.appendChild(this.slides[0]);
+        this.decorizeSlides();
+        this.moveButtonsToEnd();
     }
   
     bindTriggers() { // кліки на кнопки
         this.next.addEventListener('click', () => this.nextSlide())
 
         this.prev.addEventListener('click', () => {
-            for (let i = this.slides.length - 1; i > 0; i--) {
-                if (this.slides[i].tagName !== "BUTTON") {
-                    let active = this.slides[i];
-                    this.container.insertBefore(active, this.slides[0]);
-                    this.decorizeSlides();
-                    break;
-                }
-            }
-            let active = this.slides[this.slides.length - 1]; // останній слайд стає перед першим  
-            this.container.insertBefore(active, this.slides[0]);
+            let active = this.slides[0];
+            this.container.insertBefore(active, this.slides[this.slides.length - 1]);
             this.decorizeSlides();
+            this.moveButtonsToEnd();
         })
     }
 

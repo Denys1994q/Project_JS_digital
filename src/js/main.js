@@ -2,6 +2,7 @@ import MainSlider from './modules/slider/slider-main';
 import MiniSlider from './modules/slider/slider-mini';
 import VideoPlayer from './modules/playVideo';
 import Difference from './modules/difference';
+import Forms from './modules/forms';
 
 window.addEventListener('DOMContentLoaded', () => {
     // 4 різні слайдери: 1 екземпляр MainSlider, 3 екземпляри MiniSlider
@@ -43,5 +44,6 @@ window.addEventListener('DOMContentLoaded', () => {
     player.init();
 
     new Difference('.officerold', '.officernew', '.officer__card-item').init();
+    new Forms('form').init();
 
 });
