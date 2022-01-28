@@ -342,6 +342,36 @@ module.exports = {
 
 /***/ }),
 
+/***/ "./node_modules/core-js/internals/array-method-has-species-support.js":
+/*!****************************************************************************!*\
+  !*** ./node_modules/core-js/internals/array-method-has-species-support.js ***!
+  \****************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var fails = __webpack_require__(/*! ../internals/fails */ "./node_modules/core-js/internals/fails.js");
+var wellKnownSymbol = __webpack_require__(/*! ../internals/well-known-symbol */ "./node_modules/core-js/internals/well-known-symbol.js");
+var V8_VERSION = __webpack_require__(/*! ../internals/v8-version */ "./node_modules/core-js/internals/v8-version.js");
+
+var SPECIES = wellKnownSymbol('species');
+
+module.exports = function (METHOD_NAME) {
+  // We can't use this feature detection in V8 since it causes
+  // deoptimization and serious performance degradation
+  // https://github.com/zloirock/core-js/issues/677
+  return V8_VERSION >= 51 || !fails(function () {
+    var array = [];
+    var constructor = array.constructor = {};
+    constructor[SPECIES] = function () {
+      return { foo: 1 };
+    };
+    return array[METHOD_NAME](Boolean).foo !== 1;
+  });
+};
+
+
+/***/ }),
+
 /***/ "./node_modules/core-js/internals/array-species-create.js":
 /*!****************************************************************!*\
   !*** ./node_modules/core-js/internals/array-species-create.js ***!
@@ -2979,6 +3009,38 @@ exports.f = wellKnownSymbol;
 
 /***/ }),
 
+/***/ "./node_modules/core-js/modules/es.array.filter.js":
+/*!*********************************************************!*\
+  !*** ./node_modules/core-js/modules/es.array.filter.js ***!
+  \*********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var $ = __webpack_require__(/*! ../internals/export */ "./node_modules/core-js/internals/export.js");
+var $filter = __webpack_require__(/*! ../internals/array-iteration */ "./node_modules/core-js/internals/array-iteration.js").filter;
+var fails = __webpack_require__(/*! ../internals/fails */ "./node_modules/core-js/internals/fails.js");
+var arrayMethodHasSpeciesSupport = __webpack_require__(/*! ../internals/array-method-has-species-support */ "./node_modules/core-js/internals/array-method-has-species-support.js");
+
+var HAS_SPECIES_SUPPORT = arrayMethodHasSpeciesSupport('filter');
+// Edge 14- issue
+var USES_TO_LENGTH = HAS_SPECIES_SUPPORT && !fails(function () {
+  [].filter.call({ length: -1, 0: 1 }, function (it) { throw it; });
+});
+
+// `Array.prototype.filter` method
+// https://tc39.github.io/ecma262/#sec-array.prototype.filter
+// with adding support of @@species
+$({ target: 'Array', proto: true, forced: !HAS_SPECIES_SUPPORT || !USES_TO_LENGTH }, {
+  filter: function filter(callbackfn /* , thisArg */) {
+    return $filter(this, callbackfn, arguments.length > 1 ? arguments[1] : undefined);
+  }
+});
+
+
+/***/ }),
+
 /***/ "./node_modules/core-js/modules/es.array.iterator.js":
 /*!***********************************************************!*\
   !*** ./node_modules/core-js/modules/es.array.iterator.js ***!
@@ -4879,6 +4941,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _modules_playVideo__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./modules/playVideo */ "./src/js/modules/playVideo.js");
 /* harmony import */ var _modules_difference__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./modules/difference */ "./src/js/modules/difference.js");
 /* harmony import */ var _modules_forms__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./modules/forms */ "./src/js/modules/forms.js");
+/* harmony import */ var _modules_accordion__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./modules/accordion */ "./src/js/modules/accordion.js");
+/* harmony import */ var _modules_download__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./modules/download */ "./src/js/modules/download.js");
+
+
 
 
 
@@ -4891,6 +4957,13 @@ window.addEventListener('DOMContentLoaded', function () {
     container: '.page'
   });
   slider.render();
+  var modulePageSlider = new _modules_slider_slider_main__WEBPACK_IMPORTED_MODULE_0__["default"]({
+    btns: '.next',
+    container: '.moduleapp',
+    nextBtns: '.nextmodule',
+    prevBtns: '.prevmodule'
+  });
+  modulePageSlider.render();
   var showUpSlider = new _modules_slider_slider_mini__WEBPACK_IMPORTED_MODULE_1__["default"]({
     container: '.showup__content-slider',
     prev: '.showup__prev',
@@ -4916,11 +4989,77 @@ window.addEventListener('DOMContentLoaded', function () {
   });
   feedSlider.init(); // ютуб-плеєр
 
-  var player = new _modules_playVideo__WEBPACK_IMPORTED_MODULE_2__["default"]('.showup .play', '.overlay');
-  player.init();
+  new _modules_playVideo__WEBPACK_IMPORTED_MODULE_2__["default"]({
+    overlay: '.overlay',
+    btns: '.showup .play'
+  }).init();
+  new _modules_playVideo__WEBPACK_IMPORTED_MODULE_2__["default"]({
+    overlay: '.overlay',
+    btns: '.module__video-item .play'
+  }).init();
   new _modules_difference__WEBPACK_IMPORTED_MODULE_3__["default"]('.officerold', '.officernew', '.officer__card-item').init();
-  new _modules_forms__WEBPACK_IMPORTED_MODULE_4__["default"]('form', 'input').init();
+  new _modules_forms__WEBPACK_IMPORTED_MODULE_4__["default"]('form', '.form__block input').init();
+  new _modules_accordion__WEBPACK_IMPORTED_MODULE_5__["default"]('.module__info-show .plus').init();
+  new _modules_download__WEBPACK_IMPORTED_MODULE_6__["default"]('.download').init();
 });
+
+/***/ }),
+
+/***/ "./src/js/modules/accordion.js":
+/*!*************************************!*\
+  !*** ./src/js/modules/accordion.js ***!
+  \*************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Accordion; });
+/* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/modules/web.dom-collections.for-each */ "./node_modules/core-js/modules/web.dom-collections.for-each.js");
+/* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_0__);
+
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+var Accordion =
+/*#__PURE__*/
+function () {
+  function Accordion() {
+    var trigger = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+    var showBlock = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+    _classCallCheck(this, Accordion);
+
+    this.trigger = document.querySelectorAll(trigger);
+  }
+
+  _createClass(Accordion, [{
+    key: "bindTriggers",
+    value: function bindTriggers() {
+      this.trigger.forEach(function (trig) {
+        trig.addEventListener('click', function () {
+          var sibling = trig.closest('.module__info-show').nextElementSibling;
+          sibling.classList.toggle('msg');
+          sibling.classList.add('animated', 'fadeInUp');
+          sibling.style.marginTop = '20px';
+        });
+      });
+    }
+  }, {
+    key: "init",
+    value: function init() {
+      this.bindTriggers();
+    }
+  }]);
+
+  return Accordion;
+}();
+
+
 
 /***/ }),
 
@@ -4954,8 +5093,12 @@ function () {
     this.oldOfficer = document.querySelector(oldOfficer); // ті змінні, з якими ми працюємо безпосередньо у ф-ії 
 
     this.newOfficer = document.querySelector(newOfficer);
-    this.oldItems = this.oldOfficer.querySelectorAll(items);
-    this.newItems = this.newOfficer.querySelectorAll(items);
+
+    try {
+      this.oldItems = this.oldOfficer.querySelectorAll(items);
+      this.newItems = this.newOfficer.querySelectorAll(items);
+    } catch (e) {}
+
     this.oldCounter = 0;
     this.newCounter = 0;
   }
@@ -4990,14 +5133,80 @@ function () {
   }, {
     key: "init",
     value: function init() {
-      this.hideItems(this.newItems);
-      this.hideItems(this.oldItems);
-      this.bindTriggers(this.oldOfficer, this.oldCounter, this.oldItems);
-      this.bindTriggers(this.newOfficer, this.newCounter, this.newItems);
+      try {
+        this.hideItems(this.newItems);
+        this.hideItems(this.oldItems);
+        this.bindTriggers(this.oldOfficer, this.oldCounter, this.oldItems);
+        this.bindTriggers(this.newOfficer, this.newCounter, this.newItems);
+      } catch (e) {}
     }
   }]);
 
   return Difference;
+}();
+
+
+
+/***/ }),
+
+/***/ "./src/js/modules/download.js":
+/*!************************************!*\
+  !*** ./src/js/modules/download.js ***!
+  \************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Download; });
+/* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/modules/web.dom-collections.for-each */ "./node_modules/core-js/modules/web.dom-collections.for-each.js");
+/* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_0__);
+
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+var Download =
+/*#__PURE__*/
+function () {
+  function Download(btns) {
+    _classCallCheck(this, Download);
+
+    this.btns = document.querySelectorAll(btns);
+    this.path = 'assets/img/mainbg.jpg';
+  }
+
+  _createClass(Download, [{
+    key: "downloadItem",
+    value: function downloadItem(path) {
+      var element = document.createElement('a');
+      element.setAttribute('href', path);
+      element.setAttribute('download', 'nice_picture');
+      element.style.display = 'none';
+      document.body.appendChild(element);
+      element.click(); // типу робить клік по ссилці і він автоматично починає загружатися, бо стоїть атрибут download
+
+      document.body.removeChild(element);
+    }
+  }, {
+    key: "init",
+    value: function init() {
+      var _this = this;
+
+      this.btns.forEach(function (item) {
+        item.addEventListener('click', function (e) {
+          e.stopPropagation();
+
+          _this.downloadItem(_this.path);
+        });
+      });
+    }
+  }]);
+
+  return Download;
 }();
 
 
@@ -5056,6 +5265,10 @@ function () {
       fail: 'assets/img/fail.png'
     };
     this.path = 'assets/question.php';
+    this.nameInput = document.querySelector('.form__block [name="name"]');
+    this.positionInput = document.querySelector('.form__block [name="position"]');
+    this.emailInput = document.querySelector('.form__block [name="email"]');
+    this.phoneInput = document.querySelector('.form__block [name="phone"]');
   }
 
   _createClass(Form, [{
@@ -5109,6 +5322,32 @@ function () {
       });
     }
   }, {
+    key: "addRedBorder",
+    value: function addRedBorder() {
+      if (this.nameInput.value == '') {
+        this.nameInput.style.border = '2px solid red';
+      }
+
+      if (this.positionInput.value == '') {
+        this.positionInput.style.border = '2px solid red';
+      }
+
+      if (this.emailInput.value == '') {
+        this.emailInput.style.border = '2px solid red';
+      }
+
+      if (this.phoneInput.value == '') {
+        this.phoneInput.style.border = '2px solid red';
+      }
+    }
+  }, {
+    key: "checkInp",
+    value: function checkInp(inp) {
+      inp.addEventListener('input', function () {
+        inp.style.border = '';
+      });
+    }
+  }, {
     key: "init",
     value: function init() {
       var _this = this;
@@ -5116,41 +5355,54 @@ function () {
       this.checkMailInputs();
       this.forms.forEach(function (item) {
         item.addEventListener('submit', function (e) {
-          e.preventDefault(); // створюємо головний div для повідомлення
+          e.preventDefault();
 
-          var statusMessage = document.createElement('div'); // 3.
+          if (!_this.nameInput.value == '' && !_this.positionInput.value == '' && !_this.emailInput.value == '' && !_this.phoneInput.value == '') {
+            // створюємо головний div для повідомлення
+            var statusMessage = document.createElement('div'); // 3.
 
-          statusMessage.style.cssText = "\n                margin-top: 15px;             \n                color: 'grey';\n                font-size: 18px;\n                font-weight: 400;\n                line-height: 20px;\n                letter-spacing: -.28px;\n                ";
-          item.parentNode.appendChild(statusMessage); // створюємо всередині головного діву картинку (спінер, що йде загрузка)
+            statusMessage.style.cssText = "\n                                        margin-top: 15px;             \n                                        color: 'grey';\n                                        font-size: 18px;\n                                        font-weight: 400;\n                                        line-height: 20px;\n                                        letter-spacing: -.28px;\n                                        ";
+            item.parentNode.appendChild(statusMessage); // створюємо всередині головного діву картинку (спінер, що йде загрузка)
 
-          var statusImg = document.createElement('img');
-          statusImg.setAttribute('src', _this.message.spinner);
-          statusImg.classList.add('animated', 'fadeInUp');
-          statusMessage.appendChild(statusImg); // створюємо всередині головного діву текстовий блок (слово "загрузка")
+            var statusImg = document.createElement('img');
+            statusImg.setAttribute('src', _this.message.spinner);
+            statusImg.classList.add('animated', 'fadeInUp');
+            statusMessage.appendChild(statusImg); // створюємо всередині головного діву текстовий блок (слово "загрузка")
 
-          var textMessage = document.createElement('div');
-          textMessage.textContent = _this.message.loading;
-          statusMessage.appendChild(textMessage);
-          var formData = new FormData(item);
+            var textMessage = document.createElement('div');
+            textMessage.textContent = _this.message.loading;
+            statusMessage.appendChild(textMessage);
+            var formData = new FormData(item);
 
-          _this.postData(_this.path, formData).then(function (res) {
-            console.log(res);
-            statusImg.setAttribute('src', _this.message.ok); // 3.
+            _this.postData(_this.path, formData).then(function (res) {
+              console.log(res);
+              statusImg.setAttribute('src', _this.message.ok); // 3.
 
-            textMessage.textContent = _this.message.success; // 3.
-          }).catch(function () {
-            statusImg.setAttribute('src', _this.message.fail); // 3.
+              textMessage.textContent = _this.message.success; // 3.
+            }).catch(function () {
+              statusImg.setAttribute('src', _this.message.fail); // 3.
 
-            textMessage.textContent = _this.message.failure; // 3.
-          }).finally(function () {
-            _this.clearInputs(); // 3.
+              textMessage.textContent = _this.message.failure; // 3.
+            }).finally(function () {
+              _this.clearInputs(); // 3.
 
 
-            setTimeout(function () {
-              // 3.
-              statusMessage.remove();
-            }, 5000);
-          });
+              setTimeout(function () {
+                // 3.
+                statusMessage.remove();
+              }, 5000);
+            });
+          } else {
+            _this.addRedBorder();
+
+            _this.checkInp(_this.nameInput);
+
+            _this.checkInp(_this.positionInput);
+
+            _this.checkInp(_this.emailInput);
+
+            _this.checkInp(_this.phoneInput);
+          }
         });
       });
     }
@@ -5197,8 +5449,11 @@ function () {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return VideoPlayer; });
-/* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/modules/web.dom-collections.for-each */ "./node_modules/core-js/modules/web.dom-collections.for-each.js");
-/* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var core_js_modules_es_array_filter__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/modules/es.array.filter */ "./node_modules/core-js/modules/es.array.filter.js");
+/* harmony import */ var core_js_modules_es_array_filter__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_array_filter__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! core-js/modules/web.dom-collections.for-each */ "./node_modules/core-js/modules/web.dom-collections.for-each.js");
+/* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_1__);
+
 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -5210,12 +5465,25 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 var VideoPlayer =
 /*#__PURE__*/
 function () {
-  function VideoPlayer(triggers, overlay) {
+  // 1. завантажуємо скріпт для створення плеєру 
+  // 2. створюємо плеєр 
+  // 3. При кліку показуємо створений плеєр 
+  // 4. При кліку на хрестик плеєр закривається 
+  // не треба робити так, щоб кожен раз створювався новий плеєр, коли клікаємо на кнопку. Бо тоді працює некоректно (залишається path від першої кнопки, по якій клікнув)
+  // 5. Коли перше відео закінчується, розблоковується наступне 
+  // 6. Щоб відео не відкривалося, якщо воно ще не розблоковане 
+  function VideoPlayer(_ref) {
+    var _ref$btns = _ref.btns,
+        btns = _ref$btns === void 0 ? null : _ref$btns,
+        _ref$overlay = _ref.overlay,
+        overlay = _ref$overlay === void 0 ? null : _ref$overlay;
+
     _classCallCheck(this, VideoPlayer);
 
-    this.btns = document.querySelectorAll(triggers);
+    this.btns = document.querySelectorAll(btns);
     this.overlay = document.querySelector(overlay);
     this.close = this.overlay.querySelector('.close');
+    this.onPlayerStateChange = this.onPlayerStateChange.bind(this); // щоб ця функція з ютубівського апі запускалася з контекстом нашого об'єкту 
   }
 
   _createClass(VideoPlayer, [{
@@ -5223,14 +5491,40 @@ function () {
     value: function bindTriggers() {
       var _this = this;
 
-      this.btns.forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          if (document.querySelector('iframe#frame')) {
-            _this.overlay.style.display = 'flex';
-          } else {
-            var path = btn.getAttribute('data-url');
+      // 3. 
+      this.btns.forEach(function (btn, i) {
+        try {
+          var blockedElem = btn.closest('.module__video-item').nextElementSibling; // 6.
 
-            _this.createPlayer(path);
+          if (i % 2 == 0) {
+            // всі парні блоки 
+            blockedElem.setAttribute('data-disabled', 'true'); // блоку назначаємо disabled
+          }
+        } catch (e) {}
+
+        btn.addEventListener('click', function () {
+          if (!btn.closest('.module__video-item') || btn.closest('.module__video-item').getAttribute('data-disabled') !== 'true') {
+            // 6.
+            _this.activeBtn = btn; // кнопка, на яку ми клікнули // 5. 
+
+            if (document.querySelector('iframe#frame')) {
+              // якщо відкритий, то не створюємо знову, а просто показуємо
+              _this.overlay.style.display = 'flex';
+
+              if (_this.path !== btn.getAttribute('data-url')) {
+                // якщо ми клікнули на іншу кнопку (тобто, this.path - буде іншим)
+                _this.path = btn.getAttribute('data-url'); // просто записуємо нове значення this.path, яке відповідає тій кнопці, по якій ми клікнули 
+
+                _this.player.loadVideoById({
+                  videoId: _this.path
+                });
+              }
+            } else {
+              // якщо плеєр ще не було створено, то створюємо 
+              _this.path = btn.getAttribute('data-url');
+
+              _this.createPlayer(_this.path);
+            }
           }
         });
       });
@@ -5240,6 +5534,7 @@ function () {
     value: function bindCloseBtn() {
       var _this2 = this;
 
+      // 4. 
       this.close.addEventListener('click', function () {
         _this2.overlay.style.display = 'none';
 
@@ -5249,22 +5544,63 @@ function () {
   }, {
     key: "createPlayer",
     value: function createPlayer(url) {
+      // 2. створюємо плеєр і показуємо його через flex 
       this.player = new YT.Player('frame', {
         height: '100%',
         width: '100%',
-        videoId: "".concat(url)
+        videoId: "".concat(url),
+        events: {
+          // 5. 
+          'onStateChange': this.onPlayerStateChange
+        }
       });
       this.overlay.style.display = 'flex';
     }
   }, {
+    key: "onPlayerStateChange",
+    value: function onPlayerStateChange(state) {
+      // 5. 
+      try {
+        // замінюємо заблоковані елементи по верстці на розблоковані (міняємо іконки, написи і т.д.)
+        var blockedElem = this.activeBtn.closest('.module__video-item').nextElementSibling;
+        var playBtn = this.activeBtn.querySelector('svg').cloneNode(true); // копіюємо свг іконку 
+
+        if (state.data === 0) {
+          // якщо статус відео - закінчено
+          // console.log(this.activeBtn.closest('.module__video-item'))
+          if (blockedElem.querySelector('.play__circle').classList.contains('closed')) {
+            // тільки, якщо ще не було відкрито, тоді забирати цей клас. Щоб не вийшло так, що вже відкрито, а ми намагаємо видалити клас, який вже видалено раніше 
+            blockedElem.setAttribute('data-disabled', 'false'); // 6.
+
+            blockedElem.querySelector('.play__circle').classList.remove('closed'); // 5.
+
+            blockedElem.querySelector('svg').remove(); // видалили свг старе 
+
+            blockedElem.querySelector('.play__circle').appendChild(playBtn); // вставити свг нове
+
+            blockedElem.querySelector('.play__text').textContent = 'play video'; // міняємо текст
+
+            blockedElem.querySelector('.play__text').classList.remove('attention');
+            blockedElem.style.opacity = 1;
+            blockedElem.style.filter = 'none';
+          }
+        }
+      } catch (e) {}
+    }
+  }, {
     key: "init",
     value: function init() {
-      var tag = document.createElement('script');
-      tag.src = "https://www.youtube.com/iframe_api";
-      var firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-      this.bindTriggers();
-      this.bindCloseBtn();
+      if (this.btns.length > 0) {
+        // перевіряємо чи є в нас взагалі кнопки, щоб не було помилки 
+        var tag = document.createElement('script'); // 1. 
+
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag); // 1.
+
+        this.bindTriggers();
+        this.bindCloseBtn();
+      }
     }
   }]);
 
@@ -5339,10 +5675,10 @@ var MainSlider =
 function (_Slider) {
   _inherits(MainSlider, _Slider);
 
-  function MainSlider(btns) {
+  function MainSlider(btns, nextBtns, prevBtns) {
     _classCallCheck(this, MainSlider);
 
-    return _possibleConstructorReturn(this, _getPrototypeOf(MainSlider).call(this, btns));
+    return _possibleConstructorReturn(this, _getPrototypeOf(MainSlider).call(this, btns, nextBtns, prevBtns));
   }
 
   _createClass(MainSlider, [{
@@ -5387,27 +5723,46 @@ function (_Slider) {
       this.showSlides(this.slideIndex += n);
     }
   }, {
-    key: "render",
-    value: function render() {
+    key: "bindTriggers",
+    value: function bindTriggers(btns, n) {
       var _this2 = this;
 
-      try {
-        this.hanson = document.querySelector('.hanson');
-      } catch (e) {}
+      btns.forEach(function (item) {
+        item.addEventListener('click', function (e) {
+          e.stopPropagation();
 
-      this.btns.forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          _this2.plusSlides(1);
-        }); // щоб повертатися на 1 слайд після кліку на лого 
-
-        btn.parentNode.previousElementSibling.addEventListener('click', function (e) {
-          e.preventDefault();
-          _this2.slideIndex = 1;
-
-          _this2.showSlides(_this2.slideIndex);
+          _this2.plusSlides(n);
         });
       });
-      this.showSlides(this.slideIndex);
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      var _this3 = this;
+
+      if (this.container) {
+        try {
+          this.hanson = document.querySelector('.hanson');
+        } catch (e) {}
+
+        this.btns.forEach(function (btn) {
+          btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+
+            _this3.plusSlides(1);
+          }); // щоб повертатися на 1 слайд після кліку на лого 
+
+          btn.parentNode.previousElementSibling.addEventListener('click', function (e) {
+            e.preventDefault();
+            _this3.slideIndex = 1;
+
+            _this3.showSlides(_this3.slideIndex);
+          });
+        });
+        this.showSlides(this.slideIndex);
+        this.bindTriggers(this.prevBtns, -1);
+        this.bindTriggers(this.nextBtns, 1);
+      }
     }
   }]);
 
@@ -5567,19 +5922,21 @@ function (_Slider) {
       var _this5 = this;
 
       // при ініціалізації, перший раз, ще до кліків
-      this.container.style.cssText = "\n            display: flex;\n            flex-wrap: wrap;\n            overflow: hidden;\n            align-items: flex-start;\n        ";
-      this.bindTriggers();
-      this.decorizeSlides();
+      try {
+        this.container.style.cssText = "\n            display: flex;\n            flex-wrap: wrap;\n            overflow: hidden;\n            align-items: flex-start;\n            ";
+        this.bindTriggers();
+        this.decorizeSlides();
 
-      if (this.autoPlay) {
-        this.container.addEventListener('mouseenter', function () {
-          clearInterval(_this5.paused);
-        });
-        this.container.addEventListener('mouseleave', function () {
-          _this5.activateAnimation();
-        });
-        this.activateAnimation();
-      }
+        if (this.autoPlay) {
+          this.container.addEventListener('mouseenter', function () {
+            clearInterval(_this5.paused);
+          });
+          this.container.addEventListener('mouseleave', function () {
+            _this5.activateAnimation();
+          });
+          this.activateAnimation();
+        }
+      } catch (e) {}
     }
   }]);
 
@@ -5608,6 +5965,10 @@ var Slider = function Slider() {
       container = _ref$container === void 0 ? null : _ref$container,
       _ref$btns = _ref.btns,
       btns = _ref$btns === void 0 ? null : _ref$btns,
+      _ref$prevBtns = _ref.prevBtns,
+      prevBtns = _ref$prevBtns === void 0 ? null : _ref$prevBtns,
+      _ref$nextBtns = _ref.nextBtns,
+      nextBtns = _ref$nextBtns === void 0 ? null : _ref$nextBtns,
       _ref$next = _ref.next,
       next = _ref$next === void 0 ? null : _ref$next,
       _ref$activeClass = _ref.activeClass,
@@ -5620,8 +5981,14 @@ var Slider = function Slider() {
   _classCallCheck(this, Slider);
 
   this.container = document.querySelector(container);
-  this.slides = this.container.children;
+
+  try {
+    this.slides = this.container.children;
+  } catch (e) {}
+
   this.btns = document.querySelectorAll(btns);
+  this.prevBtns = document.querySelectorAll(prevBtns);
+  this.nextBtns = document.querySelectorAll(nextBtns);
   this.prev = document.querySelector(prev);
   this.next = document.querySelector(next);
   this.activeClass = activeClass;
